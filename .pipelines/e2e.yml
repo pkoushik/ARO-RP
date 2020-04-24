@@ -21,7 +21,7 @@ stages:
             subscription: $(e2e-subscription)
             azureDevOpsE2EJSONSPN: $(aro-v4-e2e-devops-spn)
   - stage: Delay_For_Billing_Table
-    displayName: Wait 8 hours for billing table ready
+    displayName: Wait 6 hours for billing table ready
     jobs:
     - job: JustWait
       timeoutInMinutes: 360
@@ -29,7 +29,7 @@ stages:
       steps:
       - task: Delay@1
         inputs:
-          delayForMinutes: '480'
+          delayForMinutes: '360'
   - stage: Billing_E2E
     displayName: Billing E2E
     dependsOn: Delay_For_Billing_Table 
