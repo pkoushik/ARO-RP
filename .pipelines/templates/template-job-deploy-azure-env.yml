@@ -74,3 +74,20 @@ jobs:
         subscription: ${{ parameters.e2eSubscription }}
         azureDevOpsE2EJSONSPN: ${{ parameters.azureDevOpsE2EJSONSPN }}
     # trigger billing e2e after wait
+  - job: Billing ${{ location }}_E2E
+        dependsOn: ${{ location }}_E2E
+        variables:
+          - template: ../vars.yml
+        timeoutInMinutes: 480
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - template: ./template-billing-e2e-steps.yml
+            parameters:
+              gobin: ${{ variables.GOBIN }}
+              gopath: ${{ variables.GOPATH }}
+              goroot: ${{ variables.GOROOT }}
+              workingDirectory: ${{ variables.modulePath }}
+              location: ${{ location }}
+              subscription: ${{ parameters.e2eSubscription }}
+              azureDevOpsE2EJSONSPN: ${{ parameters.azureDevOpsE2EJSONSPN }}

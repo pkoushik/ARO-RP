@@ -1,0 +1,39 @@
+parameters:
+  workingDirectory: ''
+steps:
+    - stage: Billing_E2E
+      displayName: Billing E2E
+      jobs:
+          - job: TriggerBillingBuild
+            displayName: 'Trigger Billing E2E pipeline'
+            steps:
+                - script: |
+                      # Pass variables between tasks: https://medium.com/microsoftazure/how-to-pass-variables-in-azure-pipelines-yaml-tasks-5c81c5d31763
+                      echo "##vso[task.setvariable variable=REGION]$LOCATION"
+                      CLUSTER="v4-e2e-$(git log --format=%h -n 1 HEAD)"
+                      echo "##vso[task.setvariable variable=CLUSTER]$CLUSTER"
+                      CLUSTER_RESOURCEGROUP="v4-e2e-rg-$(git log --format=%h -n 1 HEAD)-$LOCATION"
+                      echo "##vso[task.setvariable variable=CLUSTER_RESOURCEGROUP]$CLUSTER_RESOURCEGROUP"
+                      echo "E2E Cluster Resource Group Name:" $CLUSTER_RESOURCEGROUP
+                      echo "E2E Cluster Name:" $CLUSTER
+                  displayName: Pass variables into next Task
+                - task: TriggerBuild@3
+                  inputs:
+                      definitionIsInCurrentTeamProject: true
+                      buildDefinition: $(BillingE2EPipelineName)
+                      queueBuildForUserThatTriggeredBuild: true
+                      ignoreSslCertificateErrors: false
+                      useSameSourceVersion: false
+                      useCustomSourceVersion: false
+                      useSameBranch: false
+                      branchToUse: $(BillingE2EBranchName)
+                      waitForQueuedBuildsToFinish: true
+                      storeInEnvironmentVariable: false
+                      buildParameters: 'CLUSTER_RESOURCEGROUP:$(CLUSTER_RESOURCEGROUP), CLUSTER:$(CLUSTER), REGION:$(REGION)'
+                      authenticationMethod: 'OAuth Token'
+                      password: '$(System.AccessToken)'
+                      enableBuildInQueueCondition: false
+                      dependentOnSuccessfulBuildCondition: true
+                      dependentOnFailedBuildCondition: true
+                      checkbuildsoncurrentbranch: false
+                      failTaskIfConditionsAreNotFulfilled: true
