@@ -105,7 +105,8 @@ func (i *Installer) deployStorageTemplate(ctx context.Context, installConfig *in
 		timeoutCtx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 		defer cancel()
 
-		// get a token, retrying only on AADSTS700016 errors (slow AAD propagation).
+		// get a token, retrying only on AADSTS700016 errors (slow AAD
+		// propagation).
 		err = wait.PollImmediateUntil(10*time.Second, func() (bool, error) {
 			err = token.EnsureFresh()
 			switch {
@@ -310,7 +311,21 @@ func (i *Installer) deployStorageTemplate(ctx context.Context, installConfig *in
 		i.log.Printf("attaching network security group to subnet %s", subnetID)
 
 		// TODO: there is probably an undesirable race condition here - check if etags can help.
-		s, err := i.subnet.Get(ctx, subnetID)
+
+		timeoutCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+		defer cancel()
+
+		var s *mgmtnetwork.Subnet
+		err := wait.PollImmediateUntil(10*time.Second, func() (bool, error) {
+			s, err = i.subnet.Get(ctx, subnetID)
+
+			if hasAuthorizationFailedError(err) {
+				i.log.Print(err)
+				return false, nil
+			}
+
+			return err == nil, err
+		}, timeoutCtx.Done())
 		if err != nil {
 			return err
 		}
